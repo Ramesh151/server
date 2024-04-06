@@ -16,8 +16,12 @@ const propertySchema = new mongoose.Schema({
   images: {
     type: [String],
   },
+  videos: {
+    type: [String],
+  },
 });
 
 const Property = mongoose.model("Property", propertySchema);
 
 export { Property };
+
