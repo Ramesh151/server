@@ -29,11 +29,13 @@ const addProperties = asyncHandler(async (req, res) => {
 
     const uploadImagePromises = images.map(async (image) => {
       const upload = await uploadOnCloudinary(image.path);
+      console.log(upload);
       return upload.url;
     });
 
     const uploadVideoPromises = videos.map(async (video) => {
       const upload = await uploadOnCloudinary(video.path);
+       console.log(upload);
       return upload.url;
     });
 
