@@ -11,52 +11,55 @@ const addProperties = asyncHandler(async (req, res) => {
     if ([address, email, phoneNumber].some((field) => field?.trim() === "")) {
       throw new ApiError(400, "All fields are required");
     }
-    console.log(req.body);
 
-    const images = req.file.path;
-    console.log(req.file);
-    console.log(images);
-    if (!images) {
-      throw new ApiError(400, "images file is required");
+    if (!req.files || Object.keys(req.files).length === 0) {
+      throw new ApiError(400, "No files were uploaded.");
     }
 
-    const uploadimage = await uploadOnCloudinary(images);
-    console.log(uploadimage);
+    const images = req.files.images;
+    const videos = req.files.videos;
 
-    if (!uploadimage) {
-      throw new ApiError(400, "photo file is required");
+    if (!images || images.length === 0) {
+      throw new ApiError(400, "Images are required.");
     }
 
-    // const newProperty = await User.create({
+    if (!videos || videos.length === 0) {
+      throw new ApiError(400, "Videos are required.");
+    }
 
-    //   address,
-    //   email,
-    //   phoneNumber,
-    //   images: uploadimage?.url || "",
-    // });
+    const uploadImagePromises = images.map(async (image) => {
+      const upload = await uploadOnCloudinary(image.path);
+      return upload.url;
+    });
 
-    const newProperty = new Property({
+    const uploadVideoPromises = videos.map(async (video) => {
+      const upload = await uploadOnCloudinary(video.path);
+      return upload.url;
+    });
+
+    const uploadedImageUrls = await Promise.all(uploadImagePromises);
+    const uploadedVideoUrls = await Promise.all(uploadVideoPromises);
+
+    const property = new Property({
       address,
       email,
       phoneNumber,
-      images: uploadimage?.url || "",
+      images: uploadedImageUrls,
+      videos: uploadedVideoUrls,
     });
 
-    console.log(newProperty);
-
-    const saveproperty = await newProperty.save();
-    console.log(saveproperty);
+    const savedProperty = await property.save();
 
     return res
       .status(201)
-      .json(new ApiResponse(200, saveproperty, "add propertiy"));
+      .json(new ApiResponse(200, savedProperty, "Property added successfully"));
   } catch (error) {
-    console.log("add error in property", error);
-    console.error(error);
-    res.status(500).send("Internal Server Error");
+    console.log("Error adding property:", error);
+    res
+      .status(error.statusCode || 500)
+      .send(error.message || "Internal Server Error");
   }
 });
-
 const getProperties = asyncHandler(async (req, res) => {
   try {
     const propert = await Property.find();
